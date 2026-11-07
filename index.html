@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asignación Óptima de Recursos con GCP</title>
+<meta name="description" content="Distribución óptima de recursos entre unidades de una organización resuelta con Gradientes Conjugados Precondicionado (GCP): tres escenarios, errores, condicionamiento y pruebas QA.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#inicio">GCP · Recursos</a>
+  <nav aria-label="Secciones">
+    <a href="#inicio">1 Inicio</a><a href="#caso">2 Caso</a><a href="#formulacion">3 Formulación</a><a href="#entrada">4 Datos</a>
+    <a href="#escenarios">5 Escenarios</a><a href="#referencia">6 Referencia</a><a href="#gcp">7 GCP vs GC</a>
+    <a href="#errores">8 Errores</a><a href="#qa">9 QA</a><a href="#conclusiones">10 Conclusiones</a>
+  </nav>
+</header>
+
+<div class="scnbar" role="group" aria-label="Escenario activo">
+  <span>Escenario activo:</span>
+  <button class="chip" data-scn="ideal">Ideal</button>
+  <button class="chip" data-scn="stress">Bajo estrés</button>
+  <button class="chip" data-scn="ill">Mal condicionado</button>
+  <span id="statusPill" class="pill" role="status"></span>
+</div>
+
+<main>
+<section id="inicio" class="hero">
+  <p class="eyebrow">Desafío académico de Métodos Numéricos · Universidad Mayor de San Andrés</p>
+  <h1>Distribución óptima de recursos entre unidades organizacionales con Gradientes Conjugados Precondicionado</h1>
+  <p class="lead">Se resuelve el sistema simétrico definido positivo <b>Q x = (r − c)/γ</b> con el método de Suñagua (2020) en tres escenarios organizacionales, contrastándolo con el GC simple y con un método directo.</p>
+  <div class="grid3 student">
+    <label>Estudiante<input id="stName" value="Jhoel Percy Gonzales Herrera" autocomplete="name"></label>
+    <label>Carrera / Facultad<input id="stCareer" value="Informática · Facultad de Ciencias Puras y Naturales"></label>
+    <label>Mención<input id="stMention" value="Ingeniería de Sistemas"></label>
+  </div>
+  <div class="card synth">
+    <h3>Síntesis del caso</h3>
+    <p>La gerencia de una organización de servicios digitales debe redistribuir su presupuesto entre <b>8 unidades</b> interdependientes (software, infraestructura, ciberseguridad, datos, soporte, marketing, I+D y talento). El valor organizacional neto se maximiza resolviendo <code>Q x = b</code>, con Q la matriz de costos de escala e interdependencia. Se estudian tres escenarios (ideal, bajo presión financiera, mal condicionado) y se miden precisión, número de condición y velocidad de convergencia.</p>
+  </div>
+</section>
+
+<section id="caso">
+  <h2>2 · Caso de estudio</h2>
+  <div class="cols">
+    <div>
+      <h3>Contexto financiero y organizacional</h3>
+      <p>Una organización dispone de un presupuesto base repartido entre 8 unidades. Para cada unidad <i>i</i> se mide el <b>retorno esperado</b> <i>r<sub>i</sub></i> por unidad presupuestada (valor organizacional) y se descuenta el <b>costo de capital</b> <i>c</i> del financiamiento. El <b>valor organizacional neto</b> de una reasignación <i>x</i> es:</p>
+      <p class="eq">V(x) = (r − c·1)ᵀx − (γ/2)·xᵀQx</p>
+      <p>El primer término es el valor bruto neto de financiamiento; el segundo, la penalización por rendimientos decrecientes (diagonal de Q) e interdependencia entre unidades (fuera de la diagonal). Como V es cóncava, el óptimo anula el gradiente:</p>
+      <p class="eq">∇V = (r − c·1) − γQx = 0 &nbsp;⟹&nbsp; <b>Q x = (r − c·1)/γ</b></p>
+      <p>Así <b>A = Q</b>, <b>b = (r − c)/γ</b> y <b>x<sub>i</sub></b> es la reasignación a la unidad <i>i</i> como fracción del presupuesto base (negativa = recorte). Con γ = 3 fijo en los tres escenarios.</p>
+      <p>Q = [s<sub>i</sub>s<sub>j</sub>ρ<sub>ij</sub>] es simétrica por construcción (la interdependencia de <i>i</i> con <i>j</i> es la de <i>j</i> con <i>i</i>) y definida positiva porque es una matriz de Gram/covarianza de factores de costo linealmente independientes: xᵀQx &gt; 0 para todo x ≠ 0. Por eso GCP es el método natural.</p>
+    </div>
+    <div>
+      <h3>Justificación y procedencia de los datos</h3>
+      <ul>
+        <li><b>Datos didácticos.</b> Los costos de escala (0,14–0,24), acoplamientos (0,45–0,70), retornos (7–11 %) y costo de capital (3 %) son <u>ilustrativos</u>, fijados en órdenes de magnitud verosímiles. No provienen de los registros contables de una organización real.</li>
+        <li><b>Estructura de acoplamiento.</b> Un acoplamiento base común más un incremento dentro de cada bloque de procesos (Tecnología: software + infraestructura; Seguridad y datos; Atención comercial: soporte + marketing; Innovación y talento) garantiza Q definida positiva.</li>
+        <li><b>Para datos reales:</b> estimar r<sub>i</sub> desde el ROI histórico de cada unidad y Q desde la covarianza de sus costos/ingresos trimestrales, y pegarlos en el módulo «Entrada de datos».</li>
+        <li><b>Escenarios.</b> Los tres comparten unidades, γ y estructura; solo cambian coeficientes de Q y r, c (ver sección 5).</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Modelado de procesos y reglas de negocio (aporte de Ingeniería de Sistemas)</h3>
+  <div class="cols">
+    <div class="card">
+      <b>Flujo del proceso de planificación</b>
+      <ol>
+        <li>Recopilar retornos esperados r<sub>i</sub>, costo de capital c y costos de escala/acoplamiento de cada unidad.</li>
+        <li>Normalizar unidades contables entre sistemas (si no, aparece el escenario «mal condicionado»).</li>
+        <li>Construir Q y b y <b>validar</b> reglas de negocio (abajo).</li>
+        <li>Calcular la solución de referencia (método directo) y resolver con GCP.</li>
+        <li>Auditar errores, condicionamiento y convergencia; decidir la reasignación.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <b>Reglas de negocio y de validación</b>
+      <ul>
+        <li><b>RN1.</b> Q debe ser simétrica: la interdependencia entre dos unidades es recíproca.</li>
+        <li><b>RN2.</b> Q debe ser definida positiva: el costo de reasignar nunca puede ser nulo o negativo (de lo contrario el óptimo no existe).</li>
+        <li><b>RN3.</b> Se requieren al menos 4 unidades (n ≥ 4) y datos numéricos finitos.</li>
+        <li><b>RN4.</b> Σx<sub>i</sub> indica el flujo de caja interdepartamental neto: si es positiva requiere financiamiento adicional al costo c; si es negativa libera caja para la organización.</li>
+        <li><b>RN5.</b> Un resultado solo se acepta si el residuo relativo es menor que la tolerancia.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="formulacion">
+  <h2>3 · Formulación del sistema A x = b</h2>
+  <div id="formVars"></div>
+  <div id="formSystem"></div>
+  <div id="formSPD"></div>
+</section>
+
+<section id="entrada">
+  <h2>4 · Entrada de datos</h2>
+  <p class="muted">Edita cualquier celda: se valida y se recalcula todo automáticamente. Los cambios afectan al <b>escenario activo</b>.</p>
+  <div class="toolbar">
+    <label class="inline"><input type="checkbox" id="mirror" checked> Mantener simetría automática (a<sub>ij</sub> ⇒ a<sub>ji</sub>)</label>
+    <button id="btnReset" class="btn">Restaurar escenario</button>
+    <button id="btnAdd" class="btn">+ Unidad</button>
+    <button id="btnDel" class="btn">− Unidad</button>
+    <button id="btnBadSym" class="btn warn">Cargar matriz no simétrica</button>
+    <button id="btnBadPD" class="btn warn">Cargar matriz no definida positiva</button>
+  </div>
+  <div id="alerts" aria-live="polite"></div>
+  <div class="scroll"><table id="matrixInput" class="mat"></table></div>
+  <div class="grid4 params">
+    <label>Tolerancia ‖r‖/‖b‖<input id="cfgTol" type="number" step="any" value="0.000001" min="0"></label>
+    <label>N<sub>máx</sub> iteraciones<input id="cfgMax" type="number" step="1" value="1000" min="1"></label>
+    <label>Precondicionador M
+      <select id="cfgPre"><option value="jacobi" selected>Jacobi (diagonal)</option><option value="ssor">SSOR</option><option value="ic0">Cholesky incompleto IC(0)</option><option value="none">Ninguno (M = I)</option></select></label>
+    <label id="omegaWrap" hidden>ω (SSOR, 0&lt;ω&lt;2)<input id="cfgOmega" type="number" step="0.05" value="1" min="0.05" max="1.95"></label>
+    <label>Método directo
+      <select id="cfgDirect"><option value="cholesky" selected>Cholesky</option><option value="lu">LU con pivoteo</option></select></label>
+  </div>
+  <details class="card"><summary>Vector inicial x<sub>0</sub> (por defecto 0)</summary><div id="x0Row" class="x0row"></div><button id="btnX0" class="btn">x₀ = 0</button></details>
+</section>
+
+<section id="escenarios">
+  <h2>5 · Tres escenarios</h2>
+  <p class="muted">Carga rápida: cada tarjeta activa el escenario y resume sus resultados con la configuración actual.</p>
+  <div id="scnCards" class="grid3"></div>
+</section>
+
+<section id="referencia">
+  <h2>6 · Solución numérica de referencia (método directo)</h2>
+  <div id="refOut"></div>
+</section>
+
+<section id="gcp">
+  <h2>7 · Gradientes Conjugados Precondicionado vs. Gradientes Conjugados</h2>
+  <div id="gcpOut"></div>
+</section>
+
+<section id="errores">
+  <h2>8 · Análisis de errores y tabla comparativa</h2>
+  <div id="errOut"></div>
+  <h3>Tabla comparativa de los tres escenarios</h3>
+  <p class="muted">Calculada con la configuración actual (precondicionador, tolerancia, N<sub>máx</sub>, x<sub>0</sub>) sobre los datos vigentes de cada escenario.</p>
+  <div id="compareOut" class="scroll"></div>
+</section>
+
+<section id="qa">
+  <h2>9 · Módulo de pruebas (QA)</h2>
+  <p>Las pruebas se ejecutan en tu navegador contra el código real. La prueba QA-3 edita de verdad una celda de la interfaz.</p>
+  <button id="btnQA" class="btn primary">Ejecutar todas las pruebas</button> <span id="qaSummary" class="muted"></span>
+  <div class="scroll"><table id="qaTable" class="tbl qa"></table></div>
+</section>
+
+<section id="conclusiones">
+  <h2>10 · Conclusiones y referencias</h2>
+  <div id="concl"></div>
+  <h3>Referencias</h3>
+  <ul class="refs">
+    <li>Suñagua S., P. (2020). <i>Método de Gradientes Conjugados Precondicionado</i>. Revista Boliviana de Matemática – UMSA, 04, 2–7.</li>
+    <li>Golub, G. H., &amp; Van Loan, C. F. (2013). <i>Matrix Computations</i> (4th ed.). Johns Hopkins University Press.</li>
+    <li>Saad, Y. (2003). <i>Iterative Methods for Sparse Linear Systems</i> (2nd ed.). SIAM.</li>
+    <li>Boyd, S., &amp; Vandenberghe, L. (2004). <i>Convex Optimization</i>. Cambridge University Press (programación cuadrática sin restricciones).</li>
+    <li><b>Fuente de datos:</b> parámetros ilustrativos definidos por el autor (ver sección 2); no provienen de registros contables reales.</li>
+  </ul>
+  <p class="muted">Código fuente y README: enlace del repositorio en la entrega.</p>
+</section>
+</main>
+<footer>Proyecto académico · JavaScript puro, sin dependencias · <span id="year"></span></footer>
+
+<script src="js/linalg.js"></script>
+<script src="js/pcg.js"></script>
+<script src="js/model.js"></script>
+<script src="js/qa.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
